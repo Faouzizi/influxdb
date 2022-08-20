@@ -32,3 +32,55 @@ for j in range(len(data)):
   
 client = InfluxDBClient(host=host, port=port)
 client.write_points('db_cible', json_file)
+
+
+
+
+# pip install influxdb-client
+
+from datetime import datetime
+
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
+
+# You can generate an API token from the "API Tokens Tab" in the UI
+token = "token"
+org = "organization name"
+bucket = "bucket name"
+
+# Option 1
+with InfluxDBClient(url="http://localhost:8086", token=token, org=org) as client:
+  write_api = client.write_api(write_options=SYNCHRONOUS)
+  data = "mem,host=host1 used_percent=23.43234543"
+  write_api.write(bucket, org, data)
+  
+# Option 2
+with InfluxDBClient(url="http://localhost:8086", token=token, org=org) as client:
+  write_api = client.write_api(write_options=SYNCHRONOUS)
+  point = Point("mem") \
+    .tag("host", "host1") \
+    .field("used_percent", 23.43234543) \
+    .time(datetime.utcnow(), WritePrecision.NS)
+  write_api.write(bucket, org, point)
+  
+# Option 3
+with InfluxDBClient(url="http://localhost:8086", token=token, org=org) as client:
+  write_api = client.write_api(write_options=SYNCHRONOUS)
+  sequence = ["mem,host=host1 used_percent=23.43234543",
+            "mem,host=host1 available_percent=15.856523"]
+  write_api.write(bucket, org, sequence)
+
+  
+  
+query = 'from(bucket: "test") |> range(start: -1h)'
+tables = client.query_api().query(query, org=org)
+for table in tables:
+    for record in table.records:
+        print(record)
+
+client.close()
+  
+  
+  
+
+  
